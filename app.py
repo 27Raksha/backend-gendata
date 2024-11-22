@@ -31,15 +31,20 @@ default_prompts = [
 if system_prompts_collection.count_documents({}) == 0:
     system_prompts_collection.insert_many(default_prompts)
 
+@app.route('/')
+def home():
+    return "Welcome to the Flask API!"
+
+
 @app.route('/prompts', methods=['GET'])
-@cross_origin()
+
 def get_prompts():
     
     prompts = list(system_prompts_collection.find({}, {"_id": 0}))
     return jsonify({"prompts": prompts})
 
 @app.route('/prompts', methods=['POST'])
-@cross_origin()
+
 def add_prompt():
     
     new_prompt = request.json.get('content')
@@ -53,7 +58,7 @@ def add_prompt():
     return jsonify({"message": "Prompt added.", "prompt": prompt})
 
 @app.route('/prompts/<int:prompt_id>', methods=['PUT'])
-@cross_origin()
+
 def edit_prompt(prompt_id):
     
     updated_content = request.json.get('content')
@@ -67,7 +72,7 @@ def edit_prompt(prompt_id):
     return jsonify({"message": "Prompt updated.", "id": prompt_id, "content": updated_content})
 
 @app.route('/prompts/<int:prompt_id>', methods=['DELETE'])
-@cross_origin()
+
 def delete_prompt(prompt_id):
     
     result = system_prompts_collection.delete_one({"id": prompt_id})
@@ -99,7 +104,7 @@ def generate_responses(user_input, system_prompts, num_responses=3):
     return responses
 
 @app.route('/start', methods=['POST'])
-@cross_origin()
+
 def start_conversation():
     
     user_input = request.json.get('user_input')
@@ -121,7 +126,7 @@ def start_conversation():
     return jsonify({"responses": responses, "message": "Responses generated."})
 
 @app.route('/select', methods=['POST'])
-@cross_origin()
+
 def select_response():
     
     selected_index = request.json.get('selected_index')
@@ -140,16 +145,16 @@ def select_response():
         return jsonify({"error": "Invalid selected_index."}), 400
 
 @app.route('/stop', methods=['POST'])
-@cross_origin()
+
 def stop_conversation():
     
 
     mongo_result = conversations_collection.insert_one({"conversation": conversation_log})
 
 
-    file_path = "conversation_dataset.json"
-    with open(file_path, 'w') as f:
-        json.dump({"conversation": conversation_log}, f, indent=4)
+    # file_path = "conversation_dataset.json"
+    # with open(file_path, 'w') as f:
+    #     json.dump({"conversation": conversation_log}, f, indent=4)
 
     return jsonify({
         "message": "Conversation ended and saved to MongoDB as JSON.",
@@ -157,10 +162,11 @@ def stop_conversation():
     })
 
 @app.route('/continue', methods=['POST'])
-@cross_origin()
+
 def continue_conversation():
     
     return jsonify({"message": "Conversation ongoing. You can send more user input."})
 
 if __name__ == '__main__':
-    app.run()
+    port = int(os.environ.get("PORT", 5000))  # Use the PORT provided by Render, default to 5000 locally
+    app.run(host="0.0.0.0", port=port)
